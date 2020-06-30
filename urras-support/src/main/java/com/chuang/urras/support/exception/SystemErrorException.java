@@ -4,7 +4,9 @@ import java.util.Optional;
 
 /**
  * 不能将消息传递到客户端的异常。
- * Created by ath on 2016/7/7.
+ *
+ * @author ath
+ * @date 2016/7/7
  */
 public class SystemErrorException extends CodeException {
     public SystemErrorException(int code, String msg) {

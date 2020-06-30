@@ -13,18 +13,24 @@ import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.chuang.urras.crud.filters.RowQuery;
 import com.chuang.urras.toolskit.basic.BasicKit;
 import org.apache.ibatis.binding.MapperMethod;
+import org.apache.ibatis.logging.Log;
+import org.apache.ibatis.logging.LogFactory;
+import org.apache.ibatis.reflection.ExceptionUtil;
+import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.ibatis.session.SqlSessionFactory;
+import org.mybatis.spring.MyBatisExceptionTranslator;
+import org.mybatis.spring.SqlSessionHolder;
 import org.mybatis.spring.SqlSessionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.Serializable;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * IService 实现类（ 泛型：M 是 mapper 对象，T 是实体 ， PK 是主键泛型 ）
@@ -34,12 +40,55 @@ import java.util.stream.Collectors;
  */
 public class ServiceImpl<M extends BaseMapper<T>, T> implements IService<T> {
 
+    protected Log log = LogFactory.getLog(getClass());
+
     @Autowired
     protected M baseMapper;
 
     @Override
     public M getBaseMapper() {
         return baseMapper;
+    }
+
+    protected Class<?> entityClass = currentModelClass();
+
+
+
+    /**
+     * 批量操作 SqlSession
+     *
+     * @deprecated 3.3.0
+     */
+    @Deprecated
+    protected SqlSession sqlSessionBatch() {
+        return SqlHelper.sqlSessionBatch(entityClass);
+    }
+
+    /**
+     * 释放sqlSession
+     *
+     * @param sqlSession session
+     * @deprecated 3.3.0
+     */
+    @Deprecated
+    protected void closeSqlSession(SqlSession sqlSession) {
+        SqlSessionUtils.closeSqlSession(sqlSession, GlobalConfigUtils.currentSessionFactory(entityClass));
+    }
+
+    /**
+     * 获取 SqlStatement
+     *
+     * @param sqlMethod ignore
+     * @return ignore
+     */
+    protected String sqlStatement(SqlMethod sqlMethod) {
+        return SqlHelper.table(entityClass).getSqlStatement(sqlMethod.getMethod());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Class<T> currentModelClass() {
+        return (Class<T>) ReflectionKit.getSuperClassGenericType(getClass(), 1);
     }
 
     @Override
@@ -61,74 +110,17 @@ public class ServiceImpl<M extends BaseMapper<T>, T> implements IService<T> {
     }
 
     /**
-     * 判断数据库操作是否成功
-     *
-     * @param result 数据库操作返回影响条数
-     * @return boolean
-     */
-    protected boolean retBool(Integer result) {
-        return SqlHelper.retBool(result);
-    }
-
-//    public Class<T> currentModelClass() {
-//        return ReflectionKit.getSuperClassGenericType(getClass(), 1);
-//    }
-
-    /**
-     * 批量操作 SqlSession
-     */
-    protected SqlSession sqlSessionBatch() {
-        return SqlHelper.sqlSessionBatch(currentModelClass());
-    }
-
-    /**
-     * 释放sqlSession
-     *
-     * @param sqlSession session
-     */
-    protected void closeSqlSession(SqlSession sqlSession) {
-        SqlSessionUtils.closeSqlSession(sqlSession, GlobalConfigUtils.currentSessionFactory(currentModelClass()));
-    }
-
-    /**
-     * 获取 SqlStatement
-     *
-     * @param sqlMethod ignore
-     * @return ignore
-     */
-    protected String sqlStatement(SqlMethod sqlMethod) {
-        return SqlHelper.table(currentModelClass()).getSqlStatement(sqlMethod.getMethod());
-    }
-
-    @Override
-    public boolean save(T entity) {
-
-        return retBool(baseMapper.insert(entity));
-    }
-
-    /**
      * 批量插入
      *
      * @param entityList ignore
-     * @param batchSize ignore
+     * @param batchSize  ignore
      * @return ignore
      */
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean saveBatch(Collection<T> entityList, int batchSize) {
         String sqlStatement = sqlStatement(SqlMethod.INSERT_ONE);
-        try (SqlSession batchSqlSession = sqlSessionBatch()) {
-            int i = 0;
-            for (T anEntityList : entityList) {
-                batchSqlSession.insert(sqlStatement, anEntityList);
-                if (i >= 1 && i % batchSize == 0) {
-                    batchSqlSession.flushStatements();
-                }
-                i++;
-            }
-            batchSqlSession.flushStatements();
-        }
-        return true;
+        return executeBatch(entityList, batchSize, (sqlSession, entity) -> sqlSession.insert(sqlStatement, entity));
     }
 
     /**
@@ -141,7 +133,6 @@ public class ServiceImpl<M extends BaseMapper<T>, T> implements IService<T> {
     @Override
     public boolean saveOrUpdate(T entity) {
         if (null != entity) {
-
             Class<?> cls = entity.getClass();
             TableInfo tableInfo = TableInfoHelper.getTableInfo(cls);
             Assert.notNull(tableInfo, "error: can not execute. because can not find cache of TableInfo for entity!");
@@ -156,89 +147,31 @@ public class ServiceImpl<M extends BaseMapper<T>, T> implements IService<T> {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean saveOrUpdateBatch(Collection<T> entityList, int batchSize) {
-
-        Assert.notEmpty(entityList, "error: entityList must not be empty");
-        Class<?> cls = currentModelClass();
-        TableInfo tableInfo = TableInfoHelper.getTableInfo(cls);
+        TableInfo tableInfo = TableInfoHelper.getTableInfo(entityClass);
         Assert.notNull(tableInfo, "error: can not execute. because can not find cache of TableInfo for entity!");
         String keyProperty = tableInfo.getKeyProperty();
         Assert.notEmpty(keyProperty, "error: can not execute. because can not find column for id from entity!");
-        try (SqlSession batchSqlSession = sqlSessionBatch()) {
-            int i = 0;
-            for (T entity : entityList) {
-                Object idVal = ReflectionKit.getMethodValue(cls, entity, keyProperty);
-                if (StringUtils.checkValNull(idVal) || Objects.isNull(getById((Serializable) idVal))) {
-                    batchSqlSession.insert(sqlStatement(SqlMethod.INSERT_ONE), entity);
-                } else {
-                    MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
-                    param.put(Constants.ENTITY, entity);
-                    batchSqlSession.update(sqlStatement(SqlMethod.UPDATE_BY_ID), param);
-                }
-                // 不知道以后会不会有人说更新失败了还要执行插入 😂😂😂
-                if (i >= 1 && i % batchSize == 0) {
-                    batchSqlSession.flushStatements();
-                }
-                i++;
+        return executeBatch(entityList, batchSize, (sqlSession, entity) -> {
+            Object idVal = ReflectionKit.getMethodValue(entityClass, entity, keyProperty);
+            if (StringUtils.checkValNull(idVal) || Objects.isNull(getById((Serializable) idVal))) {
+                sqlSession.insert(tableInfo.getSqlStatement(SqlMethod.INSERT_ONE.getMethod()), entity);
+            } else {
+                MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
+                param.put(Constants.ENTITY, entity);
+                sqlSession.update(tableInfo.getSqlStatement(SqlMethod.UPDATE_BY_ID.getMethod()), param);
             }
-            batchSqlSession.flushStatements();
-        }
-        return true;
-    }
-
-    @Override
-    public boolean removeById(Serializable id) {
-        return SqlHelper.delBool(baseMapper.deleteById(id));
-    }
-
-    @Override
-    public boolean remove(Wrapper<T> wrapper) {
-        return SqlHelper.delBool(baseMapper.delete(wrapper));
-    }
-
-    @Override
-    public boolean removeByIds(Collection<? extends Serializable> idList) {
-        return SqlHelper.delBool(baseMapper.deleteBatchIds(idList));
-    }
-
-    @Override
-    public boolean updateById(T entity) {
-        return retBool(baseMapper.updateById(entity));
-    }
-
-    @Override
-    public boolean update(T entity, Wrapper<T> updateWrapper) {
-        return retBool(baseMapper.update(entity, updateWrapper));
+        });
     }
 
     @Transactional(rollbackFor = Exception.class)
     @Override
     public boolean updateBatchById(Collection<T> entityList, int batchSize) {
-        Assert.notEmpty(entityList, "error: entityList must not be empty");
         String sqlStatement = sqlStatement(SqlMethod.UPDATE_BY_ID);
-        try (SqlSession batchSqlSession = sqlSessionBatch()) {
-            int i = 0;
-            for (T anEntityList : entityList) {
-                MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
-                param.put(Constants.ENTITY, anEntityList);
-                batchSqlSession.update(sqlStatement, param);
-                if (i >= 1 && i % batchSize == 0) {
-                    batchSqlSession.flushStatements();
-                }
-                i++;
-            }
-            batchSqlSession.flushStatements();
-        }
-        return true;
-    }
-
-    @Override
-    public Optional<T> getById(Serializable id) {
-        return Optional.ofNullable(baseMapper.selectById(id));
-    }
-
-    @Override
-    public Collection<T> listByIds(Collection<? extends Serializable> idList) {
-        return baseMapper.selectBatchIds(idList);
+        return executeBatch(entityList, batchSize, (sqlSession, entity) -> {
+            MapperMethod.ParamMap<T> param = new MapperMethod.ParamMap<>();
+            param.put(Constants.ENTITY, entity);
+            sqlSession.update(sqlStatement, param);
+        });
     }
 
     @Override
@@ -246,31 +179,97 @@ public class ServiceImpl<M extends BaseMapper<T>, T> implements IService<T> {
         if (throwEx) {
             return Optional.ofNullable(baseMapper.selectOne(queryWrapper));
         }
-        return Optional.ofNullable(SqlHelper.getObject(baseMapper.selectList(queryWrapper)));
-    }
-
-
-    @Override
-    public int count(Wrapper<T> queryWrapper) {
-        return SqlHelper.retCount(baseMapper.selectCount(queryWrapper));
+        return Optional.ofNullable(SqlHelper.getObject(log, baseMapper.selectList(queryWrapper)));
     }
 
     @Override
-    public List<T> list(Wrapper<T> queryWrapper) {
-        return baseMapper.selectList(queryWrapper);
+    public Map<String, Object> getMap(Wrapper<T> queryWrapper) {
+        return SqlHelper.getObject(log, baseMapper.selectMaps(queryWrapper));
     }
 
     @Override
-    public IPage<T> page(IPage<T> page, Wrapper<T> queryWrapper) {
-        return baseMapper.selectPage(page, queryWrapper);
+    public <V> Optional<V> getObj(Wrapper<T> queryWrapper, Function<? super Object, V> mapper) {
+        return Optional.ofNullable(SqlHelper.getObject(log, listObjs(queryWrapper, mapper)));
     }
 
-
-    @Override
-    public <V> List<V> listObjs(Wrapper<T> queryWrapper, Function<? super Object, V> mapper) {
-        return baseMapper.selectObjs(queryWrapper).stream().filter(Objects::nonNull).map(mapper).collect(Collectors.toList());
+    /**
+     * 执行批量操作
+     *
+     * @param consumer consumer
+     * @since 3.3.0
+     * @deprecated 3.3.1 后面我打算移除掉 {@link #executeBatch(Collection, int, BiConsumer)} }.
+     */
+    @Deprecated
+    protected boolean executeBatch(Consumer<SqlSession> consumer) {
+        SqlSessionFactory sqlSessionFactory = SqlHelper.sqlSessionFactory(entityClass);
+        SqlSessionHolder sqlSessionHolder = (SqlSessionHolder) TransactionSynchronizationManager.getResource(sqlSessionFactory);
+        boolean transaction = TransactionSynchronizationManager.isSynchronizationActive();
+        if (sqlSessionHolder != null) {
+            SqlSession sqlSession = sqlSessionHolder.getSqlSession();
+            //原生无法支持执行器切换，当存在批量操作时，会嵌套两个session的，优先commit上一个session
+            //按道理来说，这里的值应该一直为false。
+            sqlSession.commit(!transaction);
+        }
+        SqlSession sqlSession = sqlSessionFactory.openSession(ExecutorType.BATCH);
+        if (!transaction) {
+            log.warn("SqlSession [" + sqlSession + "] was not registered for synchronization because DataSource is not transactional");
+        }
+        try {
+            consumer.accept(sqlSession);
+            //非事物情况下，强制commit。
+            sqlSession.commit(!transaction);
+            return true;
+        } catch (Throwable t) {
+            sqlSession.rollback();
+            Throwable unwrapped = ExceptionUtil.unwrapThrowable(t);
+            if (unwrapped instanceof RuntimeException) {
+                MyBatisExceptionTranslator myBatisExceptionTranslator
+                        = new MyBatisExceptionTranslator(sqlSessionFactory.getConfiguration().getEnvironment().getDataSource(), true);
+                throw Objects.requireNonNull(myBatisExceptionTranslator.translateExceptionIfPossible((RuntimeException) unwrapped));
+            }
+            throw ExceptionUtils.mpe(unwrapped);
+        } finally {
+            sqlSession.close();
+        }
     }
 
+    /**
+     * 执行批量操作
+     *
+     * @param list      数据集合
+     * @param batchSize 批量大小
+     * @param consumer  执行方法
+     * @param <E>       泛型
+     * @return 操作结果
+     * @since 3.3.1
+     */
+    protected <E> boolean executeBatch(Collection<E> list, int batchSize, BiConsumer<SqlSession, E> consumer) {
+        Assert.isFalse(batchSize < 1, "batchSize must not be less than one");
+        return !CollectionUtils.isEmpty(list) && executeBatch(sqlSession -> {
+            int size = list.size();
+            int i = 1;
+            for (E element : list) {
+                consumer.accept(sqlSession, element);
+                if ((i % batchSize == 0) || i == size) {
+                    sqlSession.flushStatements();
+                }
+                i++;
+            }
+        });
+    }
+
+    /**
+     * 执行批量操作（默认批次提交数量{@link com.baomidou.mybatisplus.extension.service.IService#DEFAULT_BATCH_SIZE}）
+     *
+     * @param list     数据集合
+     * @param consumer 执行方法
+     * @param <E>      泛型
+     * @return 操作结果
+     * @since 3.3.1
+     */
+    protected <E> boolean executeBatch(Collection<E> list, BiConsumer<SqlSession, E> consumer) {
+        return executeBatch(list, DEFAULT_BATCH_SIZE, consumer);
+    }
 
 
 }

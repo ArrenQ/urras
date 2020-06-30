@@ -16,12 +16,10 @@
         <dependency>
             <groupId>com.chuang.urras</groupId>
             <artifactId>urras-crud</artifactId>
-            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>com.chuang.urras</groupId>
             <artifactId>urras-web-shiro-starter</artifactId>
-            <version>${project.parent.version}</version>
         </dependency>
         <dependency>
             <groupId>io.springfox</groupId>

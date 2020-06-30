@@ -26,7 +26,7 @@
         <fastjson.version>1.2.54</fastjson.version>
         <guava.version>27.1-jre</guava.version>
         <guava.jsr305.version>3.0.2</guava.jsr305.version>
-        <mybatis-plus.version>3.2.0</mybatis-plus.version>
+        <mybatis-plus.version>3.3.1</mybatis-plus.version>
         <poi.version>3.17</poi.version>
         <shiro.version>1.2.3</shiro.version>
         <springfox-swagger2.version>2.9.2</springfox-swagger2.version>

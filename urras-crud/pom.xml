@@ -6,7 +6,7 @@
         <artifactId>urras-parent</artifactId>
         <groupId>com.chuang.urras</groupId>
         <version>1.0.0.RELEASE</version>
-        <relativePath>../urras-parent</relativePath>
+<!--        <relativePath>../urras-parent</relativePath>-->
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -35,10 +35,10 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid-spring-boot-starter</artifactId>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.alibaba</groupId>-->
+            <!--<artifactId>druid-spring-boot-starter</artifactId>-->
+        <!--</dependency>-->
 
         <dependency>
             <groupId>org.springframework</groupId>

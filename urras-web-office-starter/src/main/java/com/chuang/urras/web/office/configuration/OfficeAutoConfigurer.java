@@ -1,6 +1,7 @@
 package com.chuang.urras.web.office.configuration;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.parser.ISqlParser;
 import com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor;
 import com.chuang.urras.crud.RowQueryConverter;
@@ -12,6 +13,7 @@ import com.chuang.urras.web.office.shiro.UserRealm;
 import com.chuang.urras.web.shiro.configuration.ShiroAutoConfiguration;
 import com.chuang.urras.web.shiro.properties.RealmProperties;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.*;
@@ -28,6 +30,10 @@ import java.util.List;
 @Configuration
 @ComponentScan("com.chuang.urras.web.office")
 @Import({ShiroAutoConfiguration.class, OperatorInterceptor.class})
+@MapperScan(
+        basePackages= {"com.chuang.urras.web.office"},
+        markerInterface = BaseMapper.class
+)
 public class OfficeAutoConfigurer implements WebMvcConfigurer {
 //    @Override
 //    public Validator getValidator() {

@@ -2,6 +2,8 @@ package com.chuang.urras.toolskit.basic;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class DoubleKeyMap<K1, K2, V> {
@@ -24,6 +26,12 @@ public class DoubleKeyMap<K1, K2, V> {
         return map
                 .computeIfAbsent(k1, k -> new ConcurrentHashMap<>())
                 .computeIfAbsent(k2, k -> defaultV);
+    }
+
+    public V getOrDefault(K1 k1, K2 k2, BiFunction<K1, K2, V> creator) {
+        return map
+                .computeIfAbsent(k1, k -> new ConcurrentHashMap<>())
+                .computeIfAbsent(k2, k -> creator.apply(k1, k2));
     }
 
     public Map<K2, V> get(K1 k) {

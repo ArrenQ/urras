@@ -1500,6 +1500,21 @@ public class FileKit {
 		}
 	}
 
+	public static <T> void writeLines(Collection<T> list, File file, String charset, boolean isAppend) throws IOException {
+		PrintWriter writer = null;
+		try {
+			writer = getPrintWriter(file, charset, isAppend);
+			for (T t : list) {
+				if (t != null) {
+					writer.println(t.toString());
+					writer.flush();
+				}
+			}
+		} finally {
+			IOKit.close(writer);
+		}
+	}
+
 	/**
 	 * 写数据到文件中
 	 * 

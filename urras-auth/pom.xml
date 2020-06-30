@@ -6,6 +6,7 @@
         <artifactId>urras</artifactId>
         <groupId>com.chuang.urras</groupId>
         <version>1.0.0.RELEASE</version>
+<!--        <relativePath>../urras-parent</relativePath>-->
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
