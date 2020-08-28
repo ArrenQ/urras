@@ -26,6 +26,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 
 /**
@@ -246,7 +247,7 @@ public class AsyncHttpClient {
      * @return
      */
     public CompletableFuture<Response> exec(HttpRequestBase request, HttpEntity requestEntity, HttpContext context, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) {
-        CompletableFuture<Response> future = new CompletableFuture<>();
+        MyCompletableFuture<Response> future = new MyCompletableFuture<>();
 
         RequestConfig.Builder cfgBuilder = RequestConfig.copy(defaultConfig);
         if(null != proxy) {
@@ -312,9 +313,11 @@ public class AsyncHttpClient {
         };
 
         if(null == context) {
-            asyncHttpClient.execute(request, fc);
+            Future<HttpResponse> f = asyncHttpClient.execute(request, fc);
+            future.setCancelHandler(f::cancel);
         } else {
-            asyncHttpClient.execute(request, context, fc);
+            Future<HttpResponse> f = asyncHttpClient.execute(request, context, fc);
+            future.setCancelHandler(f::cancel);
         }
         return future;
     }

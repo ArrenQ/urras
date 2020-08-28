@@ -2,7 +2,6 @@ package com.chuang.urras.toolskit.third.apache.httpcomponents.sync;
 
 import com.chuang.urras.toolskit.third.apache.httpcomponents.HttpTools;
 import com.chuang.urras.toolskit.third.apache.httpcomponents.Response;
-import com.chuang.urras.toolskit.third.apache.httpcomponents.exception.CallHttpException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
@@ -78,27 +77,27 @@ public class HttpClient {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpClient.class);
 
-    public String doGet(String url) throws CallHttpException, IOException {
+    public String doGet(String url) throws IOException {
         return doGet(url, null);
     }
 
-    public String doPost(String url) throws CallHttpException, IOException {
+    public String doPost(String url) throws IOException {
         return doPost(url, null);
     }
 
-    public String doGet(String url, Map<String, String> params) throws CallHttpException, IOException {
+    public String doGet(String url, Map<String, String> params) throws IOException {
         return doGet(url, params, charset);
     }
 
-    public String doPost(String url, Map<String, String> params) throws CallHttpException, IOException {
+    public String doPost(String url, Map<String, String> params) throws IOException {
         return doPost(url, params, charset);
     }
 
-    public String doPost(String url, Map<String, String> params, String charset)  throws CallHttpException, IOException {
+    public String doPost(String url, Map<String, String> params, String charset)  throws IOException {
         return doPost(url, params, null, charset, null).asString();
     }
 
-    public String doGet(String url, Map<String, String> params, String charset) throws CallHttpException, IOException {
+    public String doGet(String url, Map<String, String> params, String charset) throws IOException {
         return doGet(url, params, null,charset, null, -1, -1).asString() ;
     }
 
@@ -111,11 +110,8 @@ public class HttpClient {
      * @param heads 头信息
      * @param charset 编码
      * @param proxy 代理
-     * @return
-     * @throws IOException
-     * @throws CallHttpException
      */
-    public Response exec(HttpRequestBase request, String requestData, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) throws IOException, CallHttpException {
+    public Response exec(HttpRequestBase request, String requestData, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) throws IOException {
         return exec(request, new StringEntity(requestData, charset), heads, charset, proxy, connTimeout, readTimeout);
     }
 
@@ -126,11 +122,8 @@ public class HttpClient {
      * @param heads 头信息
      * @param charset 编码
      * @param proxy 代理
-     * @return
-     * @throws IOException
-     * @throws CallHttpException
      */
-    public Response exec(HttpRequestBase request, Map<String, String> params, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) throws IOException, CallHttpException {
+    public Response exec(HttpRequestBase request, Map<String, String> params, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) throws IOException {
 
         UrlEncodedFormEntity requestEntity = null;
         if (params != null && !params.isEmpty()) {
@@ -156,7 +149,7 @@ public class HttpClient {
      * @param proxy 代理地址，允许为空，若为空，则不适用代理
      * @return 页面内容
      */
-    public Response doGet(String url, Map<String, String> params, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) throws CallHttpException, IOException {
+    public Response doGet(String url, Map<String, String> params, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) throws IOException {
 
         if (StringUtils.isBlank(url)) {
             return null;
@@ -179,7 +172,7 @@ public class HttpClient {
      * @param proxy 代理地址，允许为空，若为空，则不适用代理
      * @return 页面内容
      */
-    public Response doPost(String url, Map<String, String> params, Map<String, String> heads, String charset, HttpHost proxy)  throws CallHttpException, IOException {
+    public Response doPost(String url, Map<String, String> params, Map<String, String> heads, String charset, HttpHost proxy)  throws IOException {
 
         if (StringUtils.isBlank(url)) {
             return null;
@@ -198,7 +191,7 @@ public class HttpClient {
      * @param charset 编码格式
      * @return 页面内容
      */
-    public Response doPost(String url, String requestData, Map<String, String> heads, String charset, HttpHost proxy)  throws CallHttpException, IOException {
+    public Response doPost(String url, String requestData, Map<String, String> heads, String charset, HttpHost proxy)  throws IOException {
 
         if (StringUtils.isBlank(url)) {
             return null;
@@ -215,7 +208,7 @@ public class HttpClient {
      * @param charset 编码格式
      * @return 页面内容
      */
-    public Response doPut(String url, String requestData, Map<String,String> heads, String charset, HttpHost proxy)  throws CallHttpException, IOException {
+    public Response doPut(String url, String requestData, Map<String,String> heads, String charset, HttpHost proxy)  throws IOException {
 
         if (StringUtils.isBlank(url)) {
             return null;
@@ -231,7 +224,7 @@ public class HttpClient {
      * @param charset 编码格式
      * @return 页面内容
      */
-    public Response doPut(String url, Map<String, String> parmas, Map<String,String> heads, String charset, HttpHost proxy)  throws CallHttpException, IOException {
+    public Response doPut(String url, Map<String, String> parmas, Map<String,String> heads, String charset, HttpHost proxy)  throws IOException {
 
         if (StringUtils.isBlank(url)) {
             return null;
@@ -247,11 +240,8 @@ public class HttpClient {
      * @param heads 头信息
      * @param charset 编码
      * @param proxy 代理
-     * @return
-     * @throws IOException
-     * @throws CallHttpException
      */
-    public Response exec(HttpRequestBase request, HttpEntity requestEntity, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) throws IOException, CallHttpException {
+    public Response exec(HttpRequestBase request, HttpEntity requestEntity, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) throws IOException {
 //        logger.info("URI:" + request.getURI());
         RequestConfig.Builder cfgBuilder = RequestConfig.copy(defaultConfig);
         if(null != proxy) {

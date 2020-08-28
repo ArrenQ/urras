@@ -1,6 +1,7 @@
 package com.chuang.urras.toolskit.basic;
 
 import com.chuang.urras.toolskit.basic.util.ScheduleKit;
+import com.chuang.urras.toolskit.third.apache.httpcomponents.async.MyCompletableFuture;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -32,10 +33,25 @@ public class FutureKit {
                 );
     }
 
-    public static <T> CompletableFuture<T> retry(Supplier<CompletableFuture<T>> futureGetter, int times, int delay, TimeUnit unit, Predicate<Object> retryMatcher) {
-        CompletableFuture<T> future = new CompletableFuture<>();
+    public static <T> CompletableFuture<T> retryWhenError(Supplier<CompletableFuture<T>> futureGetter, int times, int delay, TimeUnit unit) {
+        return retry(futureGetter, times, delay, unit, o -> o instanceof Exception);
+    }
 
-        futureGetter.get().whenComplete((t, throwable) -> {
+    /**
+     *
+     * @param futureGetter 需要重试的过程
+     * @param times 次数
+     * @param delay 延迟
+     * @param unit 延迟时间单位
+     * @param retryMatcher 验证是否需要重试 （会判断错误和结果）
+     */
+    public static <T> CompletableFuture<T> retry(Supplier<CompletableFuture<T>> futureGetter, int times, int delay, TimeUnit unit, Predicate<Object> retryMatcher) {
+        MyCompletableFuture<T> future = new MyCompletableFuture<>();
+
+        CompletableFuture<T> f = futureGetter.get();
+        future.setCancelHandler(f::cancel);
+
+        f.whenComplete((t, throwable) -> {
             if(times <= 0) {
                 done(future, t, throwable);
                 return;
@@ -43,19 +59,21 @@ public class FutureKit {
             boolean needRetry =
                     (null != throwable && retryMatcher.test(throwable))
                             || retryMatcher.test(t);
-            if (needRetry) {
-                Runnable command = () -> retry(futureGetter, times - 1, delay, unit, retryMatcher)
-                        .whenComplete((t1, throwable1) -> done(future, t1, throwable1));
-
-                if(delay < 0) {
-                    command.run();
-                } else {
-                    ScheduleKit.schedule(command, delay, unit);
-                }
+            if (!needRetry) {
+                done(future, t, throwable);
                 return;
             }
 
-            done(future, t, throwable);
+
+            Runnable command = () -> retry(futureGetter, times - 1, delay, unit, retryMatcher)
+                            .whenComplete((t1, throwable1) -> done(future, t1, throwable1));
+
+            if(delay < 0) {
+                command.run();
+            } else {
+                ScheduleKit.schedule(command, delay, unit);
+            }
+
         });
 
         return future;
