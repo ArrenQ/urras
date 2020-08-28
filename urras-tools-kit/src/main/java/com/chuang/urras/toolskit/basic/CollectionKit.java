@@ -91,7 +91,7 @@ public class CollectionKit {
 	}
 
 	public static <T> T randomOne(Collection<T> coll, Function<T, Integer> weight) {
-		int total = coll.stream().map(weight).reduce((integer, integer2) -> integer + integer2).get();
+		int total = coll.stream().map(weight).reduce(Integer::sum).get();
 		int current = random.nextInt(total);
 		for(T obj: coll) {
 			int w = weight.apply(obj);
@@ -103,6 +103,11 @@ public class CollectionKit {
 		}
 
 		throw new RuntimeException("方法计算错误");
+	}
+
+	public static <T> T randomOne(T... tn) {
+		int current = random.nextInt(tn.length);
+		return tn[current];
 	}
 
 	/**
