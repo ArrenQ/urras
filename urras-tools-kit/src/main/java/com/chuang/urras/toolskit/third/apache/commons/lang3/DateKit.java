@@ -266,15 +266,25 @@ public class DateKit {
 	}
 
 	/**
+	 * 判断 begin <= time < end 是否为真
+	 * @param time
+	 * @param begin 开始时间，包含
+	 * @param end 结束时间，不包含
+	 * @return
+	 */
+	public static boolean between(Date time, Date begin, Date end) {
+		return begin.compareTo(time) <= 0 && time.compareTo(end) < 0;
+	}
+	/**
 	 * 得到n天之后是周几
 	 *
 	 */
 	public static String getAfterDayWeek(String days) {
 		int daysInt = Integer.parseInt(days);
 
-		Calendar canlendar = Calendar.getInstance(); // java.util包
-		canlendar.add(Calendar.DATE, daysInt); // 日期减 如果不够减会将月变动
-		Date date = canlendar.getTime();
+		Calendar calendar = Calendar.getInstance(); // java.util包
+		calendar.add(Calendar.DATE, daysInt); // 日期减 如果不够减会将月变动
+		Date date = calendar.getTime();
 
 		SimpleDateFormat sdf = new SimpleDateFormat("E");
 

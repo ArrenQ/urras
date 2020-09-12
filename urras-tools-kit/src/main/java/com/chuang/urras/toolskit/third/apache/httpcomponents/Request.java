@@ -11,6 +11,7 @@ import org.apache.http.client.methods.*;
 import org.apache.http.entity.StringEntity;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -199,6 +200,18 @@ public class Request implements Supplier<HttpRequestBase> {
         return newBuilder().method(HttpMethod.GET).url(url);
     }
 
+//    public static Builder Get0(String url) {
+//        if(url.contains("?")) {
+//            String[] uri = url.split("\\?");
+//
+//            String[] parmas = uri[1].split("&");
+//
+//        } else {
+//            return newBuilder().method(HttpMethod.GET).url(url);
+//        }
+//
+//    }
+
     public static Builder Head(String url) {
         return newBuilder().method(HttpMethod.HEAD).url(url);
     }
@@ -319,6 +332,12 @@ public class Request implements Supplier<HttpRequestBase> {
         }
 
         public Builder url(String url) {
+            if(url.contains("?")) {
+                String[] uri = url.split("\\?");
+                try {
+                    url = uri[0] + "?" + URLEncoder.encode(uri[1], "utf-8");
+                } catch (Exception ignore) { }
+            }
             this.url = url;
             return this;
         }

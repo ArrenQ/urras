@@ -20,6 +20,7 @@
         <module>urras-sdk</module>
         <module>urras-tools-kit-httpclient-pom</module>
         <module>urras-auth</module>
+        <module>urras-boot-kit</module>
     </modules>
     <build>
         <!--<pluginManagement>-->

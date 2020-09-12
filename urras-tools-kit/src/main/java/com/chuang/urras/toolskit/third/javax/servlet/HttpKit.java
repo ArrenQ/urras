@@ -15,6 +15,10 @@
  */
 package com.chuang.urras.toolskit.third.javax.servlet;
 
+import com.chuang.urras.toolskit.basic.RegexKit;
+import com.chuang.urras.toolskit.basic.StringKit;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -42,6 +46,37 @@ public class HttpKit {
         Optional<Map<String,String>> result = HttpKit.getRequest().map(HttpKit::getRequestParameters);
         return result.orElse(Collections.emptyMap());
 
+    }
+
+    public static boolean isSpider() {
+        return getRequest().map(HttpKit::isSpider).orElse(false);
+    }
+
+    public static boolean isSpider(HttpServletRequest request) {
+        if(null == request) {
+            return false;
+        }
+        String ua = request.getHeader("User-Agent");
+        if(null == ua) {
+            return false;
+        }
+        return ua.contains("compatible") || ua.toLowerCase().contains("spider");
+    }
+
+    public static String getSpiderName() {
+        return getRequest().map(request -> {
+            if(isSpider(request)) {
+                String ua = request.getHeader("User-Agent");
+                String name = RegexKit.get("(compatible;(.*);)", ua, 2);
+                if(null == name) {
+                    return ua;
+                } else {
+                    return name;
+                }
+            } else {
+                return "";
+            }
+        }).orElse("");
     }
 
     public static Map<String, String> getRequestParameters(HttpServletRequest request) {
@@ -100,7 +135,8 @@ public class HttpKit {
 
     public static Optional<String> requestDebugText() {
         return getRequest().map(request ->
-            String.format("url:%s, \r\nqueryString:%s, \r\nparams:%s, \r\nheader:%s",
+            String.format("remote-ip:%s, \r\nurl:%s, \r\nqueryString:%s, \r\nparams:%s, \r\nheader:%s",
+                    request.getRemoteAddr(),
                     request.getRequestURL(),
                     request.getQueryString(),
                     getRequestParameters(request),
