@@ -267,10 +267,8 @@ public class DateKit {
 
 	/**
 	 * 判断 begin <= time < end 是否为真
-	 * @param time
 	 * @param begin 开始时间，包含
 	 * @param end 结束时间，不包含
-	 * @return
 	 */
 	public static boolean between(Date time, Date begin, Date end) {
 		return begin.compareTo(time) <= 0 && time.compareTo(end) < 0;
