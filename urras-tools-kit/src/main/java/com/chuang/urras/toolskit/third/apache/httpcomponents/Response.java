@@ -1,5 +1,6 @@
 package com.chuang.urras.toolskit.third.apache.httpcomponents;
 
+import com.chuang.urras.toolskit.basic.RegexKit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.client.entity.GzipDecompressingEntity;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 
 //import org.apache.http.annotation.ThreadSafe;
 
@@ -69,6 +71,11 @@ public class Response {
     }
 
     public String asString(@Nullable String charset) {
+
+        if(null == charset) {
+            charset = getResponseHeaderCharset().orElse("utf-8");
+        }
+
         String result = null;
         try {
             HttpEntity entity = response.getEntity();
@@ -103,6 +110,20 @@ public class Response {
         }
         logger.debug("response -> " + result);
         return result;
+    }
+
+    public Optional<String> getResponseHeaderCharset() {
+        String contentType = response.getFirstHeader(HttpHeaders.CONTENT_TYPE).getValue();
+        if(null == contentType) {
+            return Optional.empty();
+        }
+        String code = RegexKit.get("charset=(\\S+);?", contentType, 1);
+        if(null == code) {
+            return Optional.empty();
+        }
+        code = code.replaceAll(";", "").trim();
+        return Optional.of(code);
+
     }
 
     public void close() {

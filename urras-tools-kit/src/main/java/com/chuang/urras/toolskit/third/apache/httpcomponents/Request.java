@@ -1,7 +1,6 @@
 package com.chuang.urras.toolskit.third.apache.httpcomponents;
 
 import com.chuang.urras.toolskit.third.apache.httpcomponents.async.AsyncHttpClient;
-import com.chuang.urras.toolskit.third.apache.httpcomponents.exception.CallHttpException;
 import com.chuang.urras.toolskit.third.apache.httpcomponents.sync.HttpClient;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -11,7 +10,7 @@ import org.apache.http.client.methods.*;
 import org.apache.http.entity.StringEntity;
 
 import java.io.IOException;
-import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -100,7 +99,7 @@ public class Request implements Supplier<HttpRequestBase> {
         initBase();
     }
 
-    public Response execute(HttpClient client) throws CallHttpException, IOException {
+    public Response execute(HttpClient client) throws IOException {
         if(null == entity) {
             return client.exec(base, params, heads, charset, proxy, connTimeout, readTimeout);
         } else {
@@ -124,11 +123,11 @@ public class Request implements Supplier<HttpRequestBase> {
         }
     }
 
-    public String executeAsString(HttpClient client) throws CallHttpException, IOException {
+    public String executeAsString(HttpClient client) throws IOException {
         return execute(client).asString();
     }
 
-    public Response execute() throws CallHttpException, IOException {
+    public Response execute() throws IOException {
 
         if(null == entity) {
             return Https.syncClient.exec(base, params, heads, charset, proxy, connTimeout, readTimeout);
@@ -137,7 +136,7 @@ public class Request implements Supplier<HttpRequestBase> {
         }
     }
 
-    public String executeAsString() throws CallHttpException, IOException {
+    public String executeAsString() throws IOException {
         return execute().asString();
     }
 
@@ -335,10 +334,20 @@ public class Request implements Supplier<HttpRequestBase> {
             if(url.contains("?")) {
                 String[] uri = url.split("\\?");
                 try {
-                    url = uri[0] + "?" + URLEncoder.encode(uri[1], "utf-8");
+                    url = uri[0];
+                    queryString(uri[1]);
                 } catch (Exception ignore) { }
             }
             this.url = url;
+            return this;
+        }
+
+        public Builder queryString(String queryString) {
+            String[] args = queryString.split("&");
+            Arrays.stream(args).forEach(s -> {
+                String[] kv = s.split("=");
+                parameter(kv[0], kv[1]);
+            });
             return this;
         }
 

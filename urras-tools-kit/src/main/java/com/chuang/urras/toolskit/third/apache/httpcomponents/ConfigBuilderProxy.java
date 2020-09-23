@@ -103,7 +103,8 @@ public abstract class ConfigBuilderProxy<T extends ConfigBuilderProxy, H> {
     }
 
     // ================= request config builder =================
-    protected final RequestConfig.Builder configBuilder = RequestConfig.custom();
+    protected final RequestConfig.Builder configBuilder = RequestConfig.custom().setRedirectsEnabled(false);
+
     public T setExpectContinueEnabled(final boolean expectContinueEnabled) {
         configBuilder.setExpectContinueEnabled(expectContinueEnabled);
         //noinspection unchecked
