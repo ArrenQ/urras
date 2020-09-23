@@ -41,6 +41,18 @@ public class Request implements Supplier<HttpRequestBase> {
 
     private CoverableRequestConfig config;
 
+
+    public Request(String url, HttpMethod method, Map<String, String> headers, Map<String, String> params, HttpEntity entity, String charset, CoverableRequestConfig config) {
+        this.method = method;
+        this.headers = headers;
+        this.params = params;
+        this.charset = charset;
+        this.entity = entity;
+        this.url = url;
+        this.config = config;
+        initBase();
+    }
+
     public HttpMethod getMethod() {
         return method;
     }
@@ -71,17 +83,6 @@ public class Request implements Supplier<HttpRequestBase> {
 
     public HttpEntity getEntity() {
         return entity;
-    }
-
-    public Request(String url, HttpMethod method, Map<String, String> headers, Map<String, String> params, HttpEntity entity, String charset, CoverableRequestConfig config) {
-        this.method = method;
-        this.headers = headers;
-        this.params = params;
-        this.charset = charset;
-        this.entity = entity;
-        this.url = url;
-        this.config = config;
-        initBase();
     }
 
     public Response execute(HttpClient client) throws IOException {

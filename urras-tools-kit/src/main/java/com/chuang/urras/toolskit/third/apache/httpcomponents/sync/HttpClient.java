@@ -5,6 +5,7 @@ import com.chuang.urras.toolskit.third.apache.httpcomponents.HttpTools;
 import com.chuang.urras.toolskit.third.apache.httpcomponents.Request;
 import com.chuang.urras.toolskit.third.apache.httpcomponents.Response;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpHost;
 import org.apache.http.annotation.Contract;
@@ -208,12 +209,13 @@ public class HttpClient {
         }
 
 
-        if (null != request.getEntity()) {
+        HttpEntity entity = HttpTools.getEntity(request, charset);
+        if (null != entity) {
             //如果是将参数写入entity的
             if(requestBase instanceof HttpEntityEnclosingRequest) {
-                ((HttpEntityEnclosingRequest)requestBase).setEntity(request.getEntity());
+                ((HttpEntityEnclosingRequest)requestBase).setEntity(entity);
             } else {
-                requestBase.setURI(URI.create(requestBase.getURI().toString() + "?" + EntityUtils.toString(request.getEntity())));
+                requestBase.setURI(URI.create(requestBase.getURI().toString() + "?" + EntityUtils.toString(entity)));
             }
         }
 

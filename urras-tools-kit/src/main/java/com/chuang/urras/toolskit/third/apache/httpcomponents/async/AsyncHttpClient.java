@@ -1,25 +1,29 @@
 package com.chuang.urras.toolskit.third.apache.httpcomponents.async;
 
+import com.chuang.urras.toolskit.basic.CollectionKit;
 import com.chuang.urras.toolskit.basic.StringKit;
+import com.chuang.urras.toolskit.third.apache.httpcomponents.HttpTools;
 import com.chuang.urras.toolskit.third.apache.httpcomponents.Request;
 import com.chuang.urras.toolskit.third.apache.httpcomponents.Response;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpResponse;
+import org.apache.http.*;
 import org.apache.http.annotation.Contract;
 import org.apache.http.annotation.ThreadingBehavior;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -258,18 +262,18 @@ public class AsyncHttpClient {
         }
 
 
-
-        if (null != request.getEntity()) {
-            //如果是将参数写入entity的
-            if(requestBase instanceof HttpEntityEnclosingRequest) {
-                ((HttpEntityEnclosingRequest)requestBase).setEntity(request.getEntity());
-            } else {
-                try {
-                    requestBase.setURI(URI.create(requestBase.getURI().toString() + "?" + EntityUtils.toString(request.getEntity())));
-                } catch (IOException e) {
-                    future.completeExceptionally(e);
+        try {
+            HttpEntity entity = HttpTools.getEntity(request, charset);
+            if (null != entity) {
+                //如果是将参数写入entity的
+                if(requestBase instanceof HttpEntityEnclosingRequest) {
+                    ((HttpEntityEnclosingRequest)requestBase).setEntity(entity);
+                } else {
+                    requestBase.setURI(URI.create(requestBase.getURI().toString() + "?" + EntityUtils.toString(entity)));
                 }
             }
+        } catch (IOException e) {
+            future.completeExceptionally(e);
         }
 
         final String finalCharset = charset;
@@ -304,4 +308,5 @@ public class AsyncHttpClient {
         }
         return future;
     }
+
 }

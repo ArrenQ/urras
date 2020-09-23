@@ -1,16 +1,19 @@
 package com.chuang.urras.toolskit.third.apache.httpcomponents;
 
+import com.chuang.urras.toolskit.basic.CollectionKit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.message.BasicNameValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -94,4 +97,28 @@ public class HttpTools {
 			logger.error("无法关闭response", e);
 		}
 	}
+
+	public static HttpEntity getEntity(Request request, String charset) throws UnsupportedEncodingException {
+		if(null != request.getEntity()) {
+			return request.getEntity();
+		}
+		Map<String, String> params = request.getParams();
+
+		if (CollectionKit.isNotEmpty(params)) {
+			ArrayList<NameValuePair> pairs = new ArrayList<>(params.size());
+			for (Map.Entry<String, String> entry : params.entrySet()) {
+				String value = entry.getValue();
+
+				if (value == null) {
+					pairs.add(new BasicNameValuePair(entry.getKey(), ""));
+				} else {
+					pairs.add(new BasicNameValuePair(entry.getKey(), value));
+				}
+			}
+			return new UrlEncodedFormEntity(pairs, charset);
+		} else {
+			return request.getEntity();
+		}
+	}
+
 }
