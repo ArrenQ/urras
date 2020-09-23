@@ -1,29 +1,25 @@
 package com.chuang.urras.toolskit.third.apache.httpcomponents.async;
 
+import com.chuang.urras.toolskit.basic.StringKit;
+import com.chuang.urras.toolskit.third.apache.httpcomponents.Request;
 import com.chuang.urras.toolskit.third.apache.httpcomponents.Response;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.*;
+import org.apache.http.HttpEntityEnclosingRequest;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpResponse;
 import org.apache.http.annotation.Contract;
 import org.apache.http.annotation.ThreadingBehavior;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.concurrent.FutureCallback;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -96,56 +92,6 @@ public class AsyncHttpClient {
     }
 
     /**
-     * 执行http请求
-     * @param request httrequest对象
-     * @param requestData request数据，例如xml，json等等
-     * @param heads 头信息
-     * @param charset 编码
-     * @param proxy 代理
-     * @return
-     */
-    public CompletableFuture<Response> exec(HttpRequestBase request, String requestData, HttpContext context, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) {
-        return exec(request, new StringEntity(requestData, charset), context, heads, charset, proxy, connTimeout, readTimeout);
-    }
-
-    /**
-     * 执行请求
-     * @param request 请求对象
-     * @param params 参数键值
-     * @param heads 头信息
-     * @param charset 编码
-     * @param proxy 代理
-     * @return
-     */
-    public CompletableFuture<Response> exec(HttpRequestBase request, Map<String, String> params, HttpContext context, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) {
-
-        UrlEncodedFormEntity requestEntity = null;
-        if (!(null == params  || params.isEmpty())) {
-            ArrayList<NameValuePair> pairs = new ArrayList(params.size());
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                String value = entry.getValue();
-
-                if (value == null) {
-                    pairs.add(new BasicNameValuePair(entry.getKey(), ""));
-                } else {
-                    pairs.add(new BasicNameValuePair(entry.getKey(), value));
-                }
-            }
-
-            try {
-                requestEntity = new UrlEncodedFormEntity(pairs, charset);
-            } catch (UnsupportedEncodingException e) {
-                CompletableFuture<Response> future = new CompletableFuture<>();
-                future.completeExceptionally(e);
-                return future;
-            }
-
-        }
-        return exec(request, requestEntity, context, heads, charset, proxy, connTimeout, readTimeout);
-
-    }
-
-    /**
      * HTTP Get 获取内容
      *
      * @param url     请求的url地址 ?之前的地址 不能为空
@@ -160,10 +106,18 @@ public class AsyncHttpClient {
             return CompletableFuture.completedFuture(null);
         }
 
-        HttpGet httpGet = new HttpGet(url);
-
-
-        return exec(httpGet, params, context, heads, charset, proxy, connTimeout, readTimeout);
+        Request request = Request.Get(url)
+                .parameter(params)
+                .header(heads)
+                .charset(charset)
+                .config()
+                .setProxy(proxy)
+                .setConnectTimeout(connTimeout)
+                .setConnectionRequestTimeout(connTimeout)
+                .setSocketTimeout(readTimeout)
+                .done()
+                .build();
+        return exec(request, context);
 
     }
 
@@ -182,8 +136,18 @@ public class AsyncHttpClient {
         if (StringUtils.isBlank(url)) {
             return CompletableFuture.completedFuture(null);
         }
-
-        return exec(new HttpPost(url), params, context, heads, charset, proxy, -1, -1);
+        Request request = Request.Post(url)
+                .parameter(params)
+                .header(heads)
+                .charset(charset)
+                .config()
+                .setProxy(proxy)
+                .setConnectTimeout(-1)
+                .setConnectionRequestTimeout(-1)
+                .setSocketTimeout(-1)
+                .done()
+                .build();
+        return exec(request, context);
     }
 
 
@@ -201,7 +165,18 @@ public class AsyncHttpClient {
         if (StringUtils.isBlank(url)) {
             return CompletableFuture.completedFuture(null);
         }
-        return exec(new HttpPost(url) , requestData, context, heads, charset, proxy, -1, -1);
+        Request request = Request.Post(url)
+                .body(requestData)
+                .header(heads)
+                .charset(charset)
+                .config()
+                .setProxy(proxy)
+                .setConnectTimeout(-1)
+                .setConnectionRequestTimeout(-1)
+                .setSocketTimeout(-1)
+                .done()
+                .build();
+        return exec(request, context);
     }
 
 
@@ -218,7 +193,20 @@ public class AsyncHttpClient {
         if (StringUtils.isBlank(url)) {
             return CompletableFuture.completedFuture(null);
         }
-        return exec(new HttpPut(url), requestData, context, heads, charset, proxy, -1, -1);
+
+        Request request = Request.Put(url)
+                .body(requestData)
+                .header(heads)
+                .charset(charset)
+                .config()
+                .setProxy(proxy)
+                .setConnectTimeout(-1)
+                .setConnectionRequestTimeout(-1)
+                .setSocketTimeout(-1)
+                .done()
+                .build();
+
+        return exec(request, context);
     }
 
     /**
@@ -234,55 +222,50 @@ public class AsyncHttpClient {
         if (StringUtils.isBlank(url)) {
             return CompletableFuture.completedFuture(null);
         }
-        return exec(new HttpPut(url), parmas, context, heads, charset, proxy, -1, -1);
+        Request request = Request.Put(url)
+                .parameter(parmas)
+                .header(heads)
+                .charset(charset)
+                .config()
+                .setProxy(proxy)
+                .setConnectTimeout(-1)
+                .setConnectionRequestTimeout(-1)
+                .setSocketTimeout(-1)
+                .done()
+                .build();
+        return exec(request, context);
     }
 
-    /**
-     * 执行请求
-     * @param request 请求对象
-     * @param requestEntity 请求数据体
-     * @param heads 头信息
-     * @param charset 编码
-     * @param proxy 代理
-     * @return
-     */
-    public CompletableFuture<Response> exec(HttpRequestBase request, HttpEntity requestEntity, HttpContext context, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) {
+
+    public CompletableFuture<Response> exec(Request request, HttpContext context) {
         MyCompletableFuture<Response> future = new MyCompletableFuture<>();
 
-        RequestConfig.Builder cfgBuilder = RequestConfig.copy(defaultConfig);
-        if(null != proxy) {
-            cfgBuilder.setProxy(proxy);
+        RequestConfig config = request.getConfig().cover(defaultConfig);
+
+
+        HttpRequestBase requestBase = request.get();
+
+        requestBase.setConfig(config);
+
+        Map<String, String> headers = request.getHeaders();
+        for(String key : headers.keySet()) {
+            requestBase.addHeader(key, headers.get(key));
         }
 
-        if(-1 != readTimeout){
-            cfgBuilder.setSocketTimeout(readTimeout);
-        }
-
-        if(-1 != connTimeout){
-            cfgBuilder.setConnectTimeout(connTimeout);
-            cfgBuilder.setConnectionRequestTimeout(connTimeout);
-        }
-
-        request.setConfig(cfgBuilder.build());
-
-        if(heads != null) {
-            for(String key : heads.keySet()) {
-                request.addHeader(key, heads.get(key));
-            }
-        }
-        if(null == charset || charset.isEmpty()) {
+        String charset = request.getCharset();
+        if(StringKit.isBlank(charset)) {
             charset = this.defaultCharset;
         }
 
 
 
-        if (null != requestEntity) {
+        if (null != request.getEntity()) {
             //如果是将参数写入entity的
-            if(request instanceof HttpEntityEnclosingRequest) {
-                ((HttpEntityEnclosingRequest)request).setEntity(requestEntity);
+            if(requestBase instanceof HttpEntityEnclosingRequest) {
+                ((HttpEntityEnclosingRequest)requestBase).setEntity(request.getEntity());
             } else {
                 try {
-                    request.setURI(URI.create(request.getURI().toString() + "?" + EntityUtils.toString(requestEntity)));
+                    requestBase.setURI(URI.create(requestBase.getURI().toString() + "?" + EntityUtils.toString(request.getEntity())));
                 } catch (IOException e) {
                     future.completeExceptionally(e);
                 }
@@ -295,7 +278,7 @@ public class AsyncHttpClient {
             @Override
             public void completed(HttpResponse httpResponse) {
                 synchronized (future) {
-                    Response response = new Response(request, httpResponse, finalCharset);
+                    Response response = new Response(requestBase, httpResponse, finalCharset);
                     future.complete(response);
 
                 }
@@ -303,7 +286,7 @@ public class AsyncHttpClient {
             @Override
             public void failed(Exception e) {
                 logger.debug("urras request 失败", e);
-                future.completeExceptionally(new IOException(request.toString() + "失败", e));
+                future.completeExceptionally(new IOException(requestBase.toString() + "失败", e));
             }
 
             public void cancelled() {
@@ -313,10 +296,10 @@ public class AsyncHttpClient {
         };
 
         if(null == context) {
-            Future<HttpResponse> f = asyncHttpClient.execute(request, fc);
+            Future<HttpResponse> f = asyncHttpClient.execute(requestBase, fc);
             future.setCancelHandler(f::cancel);
         } else {
-            Future<HttpResponse> f = asyncHttpClient.execute(request, context, fc);
+            Future<HttpResponse> f = asyncHttpClient.execute(requestBase, context, fc);
             future.setCancelHandler(f::cancel);
         }
         return future;

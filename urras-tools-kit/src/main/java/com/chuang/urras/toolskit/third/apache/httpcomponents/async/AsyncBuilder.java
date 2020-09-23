@@ -150,7 +150,7 @@ public class AsyncBuilder extends ConfigBuilderProxy<AsyncBuilder, AsyncHttpClie
 
         connManager.setDefaultMaxPerRoute(maxConnectEachHost);//每个域名一次能同时发起多少个请求。
         connManager.setMaxTotal(totalConnectPoolMax);//最多一次能同时发起多少个请求（每个请求就是一个连接）
-        hostMaxConnect.forEach((httpRoute, max) -> connManager.setMaxPerRoute(httpRoute, max));//每个域名最多能发起多少个连接。
+        hostMaxConnect.forEach(connManager::setMaxPerRoute);//每个域名最多能发起多少个连接。
 
         CloseableHttpAsyncClient httpclient = clientBuilder
                 .setConnectionManager(connManager)

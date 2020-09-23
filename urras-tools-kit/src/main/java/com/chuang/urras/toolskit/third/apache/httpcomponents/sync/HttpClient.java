@@ -1,27 +1,24 @@
 package com.chuang.urras.toolskit.third.apache.httpcomponents.sync;
 
+import com.chuang.urras.toolskit.basic.StringKit;
 import com.chuang.urras.toolskit.third.apache.httpcomponents.HttpTools;
+import com.chuang.urras.toolskit.third.apache.httpcomponents.Request;
 import com.chuang.urras.toolskit.third.apache.httpcomponents.Response;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpHost;
-import org.apache.http.NameValuePair;
 import org.apache.http.annotation.Contract;
 import org.apache.http.annotation.ThreadingBehavior;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.*;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.Map;
 
 //import org.apache.http.annotation.ThreadSafe;
@@ -37,8 +34,8 @@ import java.util.Map;
  *      headers.put(key1, val1);
  *      headers.put(key2, val2);
  *      Map<String, String> params = new HashMap();
- *      pamras.put(key1, val1);
- *      pamras.put(key2, val2);
+ *      params.put(key1, val1);
+ *      params.put(key2, val2);
  *
  *      String response = client.doGet(url, params, headers, "UTF-8", null);
  *
@@ -49,8 +46,8 @@ import java.util.Map;
  *      String response = HttpRequest.newBuilder().url(url)
  *          .header(headkey1, headval1)
  *          .header(headkey2, headval2)
- *          .paramter(pk1, pv1)
- *          .paramter(pk2, pv2)
+ *          .parameter(pk1, pv1)
+ *          .parameter(pk2, pv2)
  *          .method("GET")
  *          .charsetUTF()
  *          .build()
@@ -65,13 +62,13 @@ import java.util.Map;
 public class HttpClient {
 
     public HttpClient(String defaultCharset, CloseableHttpClient httpClient, RequestConfig defaultConfig) {
-        this.charset = defaultCharset;
+        this.defaultCharset = defaultCharset;
         this.httpClient = httpClient;
         this.defaultConfig = defaultConfig;
 
     }
 
-    private final String charset;
+    private final String defaultCharset;
     private final CloseableHttpClient httpClient;
     private final RequestConfig defaultConfig;
 
@@ -86,11 +83,11 @@ public class HttpClient {
     }
 
     public String doGet(String url, Map<String, String> params) throws IOException {
-        return doGet(url, params, charset);
+        return doGet(url, params, defaultCharset);
     }
 
     public String doPost(String url, Map<String, String> params) throws IOException {
-        return doPost(url, params, charset);
+        return doPost(url, params, defaultCharset);
     }
 
     public String doPost(String url, Map<String, String> params, String charset)  throws IOException {
@@ -99,45 +96,6 @@ public class HttpClient {
 
     public String doGet(String url, Map<String, String> params, String charset) throws IOException {
         return doGet(url, params, null,charset, null, -1, -1).asString() ;
-    }
-
-
-
-    /**
-     * 执行http请求
-     * @param request httrequest对象
-     * @param requestData request数据，例如xml，json等等
-     * @param heads 头信息
-     * @param charset 编码
-     * @param proxy 代理
-     */
-    public Response exec(HttpRequestBase request, String requestData, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) throws IOException {
-        return exec(request, new StringEntity(requestData, charset), heads, charset, proxy, connTimeout, readTimeout);
-    }
-
-    /**
-     * 执行请求
-     * @param request 请求对象
-     * @param params 参数键值
-     * @param heads 头信息
-     * @param charset 编码
-     * @param proxy 代理
-     */
-    public Response exec(HttpRequestBase request, Map<String, String> params, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) throws IOException {
-
-        UrlEncodedFormEntity requestEntity = null;
-        if (params != null && !params.isEmpty()) {
-            ArrayList<NameValuePair> pairs = new ArrayList<>(params.size());
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                String value = entry.getValue();
-                value = (value == null ? "": value);
-                pairs.add(new BasicNameValuePair(entry.getKey(), value));
-
-            }
-            requestEntity = new UrlEncodedFormEntity(pairs, charset);
-
-        }
-        return exec(request, requestEntity, heads, charset, proxy,connTimeout, readTimeout);
     }
 
     /**
@@ -155,10 +113,7 @@ public class HttpClient {
             return null;
         }
 
-        HttpGet httpGet = new HttpGet(url);
-
-
-        return exec(httpGet, params, heads, charset, proxy, connTimeout, readTimeout);
+        return exec(Request.Get(url).parameter(params).header(heads).charset(charset).config().setProxy(proxy).setConnectTimeout(connTimeout).setSocketTimeout(readTimeout).done().build(), null);
 
     }
 
@@ -178,7 +133,7 @@ public class HttpClient {
             return null;
         }
 
-        return exec(new HttpPost(url), params, heads, charset, proxy, -1, -1);
+        return exec(Request.Post(url).parameter(params).header(heads).charset(charset).config().setProxy(proxy).done().build(), null);
     }
 
 
@@ -196,7 +151,7 @@ public class HttpClient {
         if (StringUtils.isBlank(url)) {
             return null;
         }
-        return exec(new HttpPost(url) , requestData, heads, charset, proxy, -1, -1);
+        return exec(Request.Post(url).body(requestData).header(heads).charset(charset).config().setProxy(proxy).done().build(), null);
     }
 
 
@@ -213,7 +168,7 @@ public class HttpClient {
         if (StringUtils.isBlank(url)) {
             return null;
         }
-        return exec(new HttpPut(url), requestData, heads, charset, proxy, -1, -1);
+        return exec(Request.Put(url).body(requestData).header(heads).charset(charset).config().setProxy(proxy).done().build(), null);
     }
 
     /**
@@ -229,56 +184,47 @@ public class HttpClient {
         if (StringUtils.isBlank(url)) {
             return null;
         }
-        return exec(new HttpPut(url), parmas, heads, charset, proxy, -1, -1);
+        return exec(Request.Put(url).parameter(parmas).header(heads).charset(charset).config().setProxy(proxy).done().build(), null);
     }
 
 
     /**
      * 执行请求
-     * @param request 请求对象
-     * @param requestEntity 请求数据体
-     * @param heads 头信息
-     * @param charset 编码
-     * @param proxy 代理
      */
-    public Response exec(HttpRequestBase request, HttpEntity requestEntity, Map<String, String> heads, String charset, HttpHost proxy, int connTimeout, int readTimeout) throws IOException {
-//        logger.info("URI:" + request.getURI());
-        RequestConfig.Builder cfgBuilder = RequestConfig.copy(defaultConfig);
-        if(null != proxy) {
-            cfgBuilder.setProxy(proxy);
+    public Response exec(Request request, HttpContext context) throws IOException {
+
+        HttpRequestBase requestBase = request.get();
+        requestBase.setConfig(request.getConfig().cover(defaultConfig));
+
+        String charset = request.getCharset();
+        if(StringKit.isBlank(charset)) {
+            charset = this.defaultCharset;
         }
 
-        if(-1 != connTimeout){
-            cfgBuilder.setConnectTimeout(connTimeout);
+
+        Map<String, String> headers = request.getHeaders();
+        for(String key : headers.keySet()) {
+            requestBase.addHeader(key, headers.get(key));
         }
 
-        if(-1 != readTimeout){
-            cfgBuilder.setSocketTimeout(readTimeout);
-        }
-        request.setConfig(cfgBuilder.build());
 
-        if(heads != null) {
-            for(String key : heads.keySet()) {
-                request.addHeader(key, heads.get(key));
-            }
-        }
-        if(null == charset || charset.isEmpty()) {
-            charset = this.charset;
-        }
-
-        if (null != requestEntity) {
+        if (null != request.getEntity()) {
             //如果是将参数写入entity的
-            if(request instanceof HttpEntityEnclosingRequest) {
-                ((HttpEntityEnclosingRequest)request).setEntity(requestEntity);
+            if(requestBase instanceof HttpEntityEnclosingRequest) {
+                ((HttpEntityEnclosingRequest)requestBase).setEntity(request.getEntity());
             } else {
-                request.setURI(URI.create(request.getURI().toString() + "?" + EntityUtils.toString(requestEntity)));
+                requestBase.setURI(URI.create(requestBase.getURI().toString() + "?" + EntityUtils.toString(request.getEntity())));
             }
         }
+
         CloseableHttpResponse response = null;
         try {
-            response = httpClient.execute(request);
-
-            return new Response(request, response, charset);
+            if(null == context) {
+                response = httpClient.execute(requestBase);
+            } else {
+                response = httpClient.execute(requestBase, context);
+            }
+            return new Response(requestBase, response, charset);
         } catch (IOException e) {
             logger.error("http 请求失败", e);
             HttpTools.closeQuietly(response);

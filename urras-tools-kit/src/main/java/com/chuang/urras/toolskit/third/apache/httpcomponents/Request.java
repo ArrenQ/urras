@@ -3,17 +3,13 @@ package com.chuang.urras.toolskit.third.apache.httpcomponents;
 import com.chuang.urras.toolskit.third.apache.httpcomponents.async.AsyncHttpClient;
 import com.chuang.urras.toolskit.third.apache.httpcomponents.sync.HttpClient;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
 import org.apache.http.annotation.Contract;
 import org.apache.http.annotation.ThreadingBehavior;
 import org.apache.http.client.methods.*;
 import org.apache.http.entity.StringEntity;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -35,35 +31,26 @@ public class Request implements Supplier<HttpRequestBase> {
 
     private final String url;
     private final HttpMethod method;
-    private final Map<String, String> heads;
+    private final Map<String, String> headers;
     private final Map<String, String> params;
     private final HttpEntity entity;
-
-    private final int connTimeout;
-    private final int readTimeout;
-
     //@GuardedBy("this")
     private HttpRequestBase base;
 
-    private final HttpHost proxy;
-
     private final String charset;
 
+    private CoverableRequestConfig config;
 
     public HttpMethod getMethod() {
         return method;
     }
 
-    public Map<String, String> getHeads() {
-        return heads;
+    public Map<String, String> getHeaders() {
+        return headers;
     }
 
     public Map<String, String> getParams() {
         return params;
-    }
-
-    public HttpHost getProxy() {
-        return proxy;
     }
 
     public String getCharset() {
@@ -78,49 +65,36 @@ public class Request implements Supplier<HttpRequestBase> {
         return method.toString();
     }
 
-    public int getConnTimeout() {
-        return this.connTimeout;
+    public CoverableRequestConfig getConfig() {
+        return config;
     }
 
-    public int getReadTimeout() {
-        return this.readTimeout;
+    public HttpEntity getEntity() {
+        return entity;
     }
 
-    public Request(String url, HttpMethod method, Map<String, String> heads, Map<String, String> params, HttpEntity entity, HttpHost proxy, String charset, int connTimeout, int readTimeout) {
+    public Request(String url, HttpMethod method, Map<String, String> headers, Map<String, String> params, HttpEntity entity, String charset, CoverableRequestConfig config) {
         this.method = method;
-        this.heads = heads;
+        this.headers = headers;
         this.params = params;
-        this.proxy = proxy;
         this.charset = charset;
         this.entity = entity;
         this.url = url;
-        this.connTimeout = connTimeout;
-        this.readTimeout = readTimeout;
+        this.config = config;
         initBase();
     }
 
     public Response execute(HttpClient client) throws IOException {
-        if(null == entity) {
-            return client.exec(base, params, heads, charset, proxy, connTimeout, readTimeout);
-        } else {
-            return client.exec(base, entity, heads, charset, proxy, connTimeout, readTimeout);
-        }
+        return client.exec(this, null);
     }
 
     public CompletableFuture<Response> execute(AsyncHttpClient client) {
-        if(null == entity) {
-            return client.exec(base, params, null, heads, charset, proxy, connTimeout, readTimeout);
-        } else {
-            return client.exec(base, entity, null, heads, charset, proxy, connTimeout, readTimeout);
-        }
+        return client.exec(this, null);
     }
 
     public CompletableFuture<String> executeAsString(AsyncHttpClient client) {
-        if(null == entity) {
-            return client.exec(base, params, null, heads, charset, proxy, connTimeout, readTimeout).thenApply(Response::asString);
-        } else {
-            return client.exec(base, entity, null, heads, charset, proxy, connTimeout, readTimeout).thenApply(Response::asString);
-        }
+
+        return execute(client).thenApply(Response::asString);
     }
 
     public String executeAsString(HttpClient client) throws IOException {
@@ -129,11 +103,7 @@ public class Request implements Supplier<HttpRequestBase> {
 
     public Response execute() throws IOException {
 
-        if(null == entity) {
-            return Https.syncClient.exec(base, params, heads, charset, proxy, connTimeout, readTimeout);
-        } else {
-            return Https.syncClient.exec(base, entity, heads, charset, proxy, connTimeout, readTimeout);
-        }
+        return execute(Https.syncClient);
     }
 
     public String executeAsString() throws IOException {
@@ -142,21 +112,11 @@ public class Request implements Supplier<HttpRequestBase> {
 
 
     public CompletableFuture<Response> asyncExecute() {
-        if(null == entity) {
-            return Https.asyncClient.exec(base, params, null, heads, charset, proxy, connTimeout, readTimeout);
-        } else {
-            return Https.asyncClient.exec(base, entity, null, heads, charset, proxy, connTimeout, readTimeout);
-        }
+        return execute(Https.asyncClient);
     }
 
     public CompletableFuture<String> asyncExecuteAsString() {
         return asyncExecute().thenApply(Response::asString);
-    }
-
-
-
-    public HttpRequestBase getHttpRequestBase() {
-        return base;
     }
 
     private synchronized void initBase() {
@@ -199,18 +159,6 @@ public class Request implements Supplier<HttpRequestBase> {
         return newBuilder().method(HttpMethod.GET).url(url);
     }
 
-//    public static Builder Get0(String url) {
-//        if(url.contains("?")) {
-//            String[] uri = url.split("\\?");
-//
-//            String[] parmas = uri[1].split("&");
-//
-//        } else {
-//            return newBuilder().method(HttpMethod.GET).url(url);
-//        }
-//
-//    }
-
     public static Builder Head(String url) {
         return newBuilder().method(HttpMethod.HEAD).url(url);
     }
@@ -237,24 +185,15 @@ public class Request implements Supplier<HttpRequestBase> {
         private Map<String, String> headers;
         private Map<String, String> params;
         private HttpEntity entity;
-
         private String body;
-
         private String url;
-
-        private int connTimeout;
-        private int readTimeout;
-
-        private HttpHost proxy = null;
-
         private String charset;
+        private MyCoverableConfigBuilder config = new MyCoverableConfigBuilder(this);
 
         public Builder() {
             headers = new HashMap<>();
             params = new LinkedHashMap<>();
             charset = "UTF-8";
-            connTimeout = -1;
-            readTimeout = -1;
         }
 
         public Builder method(String method) {
@@ -271,6 +210,10 @@ public class Request implements Supplier<HttpRequestBase> {
             headers.put(key, val);
             return this;
         }
+        public Builder header(Map<String, String> headers){
+            headers.putAll(headers);
+            return this;
+        }
 
         public Builder parameter(String key, String val){
             params.put(key, val);
@@ -281,26 +224,6 @@ public class Request implements Supplier<HttpRequestBase> {
         public Builder parameter(Map<String, String> map) {
             params.putAll(map);
             this.entity = null;
-            return this;
-        }
-
-        public Builder connTimeout(int timeout) {
-            this.connTimeout = timeout;
-            return this;
-        }
-
-        public Builder readTimeout(int readTimeout) {
-            this.readTimeout = readTimeout;
-            return this;
-        }
-
-        public Builder proxy(String host, int port) {
-            this.proxy = new HttpHost(host, port);
-            return this;
-        }
-
-        public Builder proxy(HttpHost httpHost) {
-            this.proxy = httpHost;
             return this;
         }
 
@@ -351,25 +274,32 @@ public class Request implements Supplier<HttpRequestBase> {
             return this;
         }
 
+        public MyCoverableConfigBuilder config() {
+            return this.config;
+        }
+
         public Request build() {
             if(null != body) {
                 this.entity = new StringEntity(body, charset);
                 params.clear();
             }
-            return new Request(url, method, headers, params, entity, proxy, charset, connTimeout, readTimeout);
-//            Map<String, String> h = new HashMap<>();
-//            Map<String, String> p = new HashMap<>();
-//            h.putAll(headers);
-//            p.putAll(params);
-//
-//
-//            return new Request(url, HttpMethod.valueOf(method.name()), h, p, )
+            return new Request(url, method, headers, params, entity, charset, config.build());
         }
-
-
 
     }
 
+    public static class MyCoverableConfigBuilder extends CoverableRequestConfig.Builder<MyCoverableConfigBuilder> {
 
+        private final Request.Builder builder;
+
+        public MyCoverableConfigBuilder(Request.Builder builder) {
+            this.builder = builder;
+        }
+
+        public Request.Builder done() {
+            return builder;
+        }
+
+    }
 
 }
