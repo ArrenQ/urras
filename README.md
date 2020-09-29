@@ -106,7 +106,11 @@ mvn versions:set -DnewVersion=1.2.0.RELEASE
                     因此这种情况下才需要创建相关的 VO。
     - Qry 存在的原因是：前台参数某些时候会比较长，例如修改个人资料时，如果将个人资料的参数全部列举会导致参数列表过多。所以有必要使用对象作为参数。
                     这里不推荐使用Entity，因为Entity中的字段不一定是必要的。这样会使得日后维护时，无法确定那些参数有用，那些参数没用。
+    - DTO service 之间 RPC 通讯时使用
+    - DO,Entity,PO 任选其一作为持久对象
+    - BO service对业务进行处理后得到的复杂对象，
     - 注意：Qry和VO不是简单的 Entity 拷贝。 VO只保存Entity作为数据时的非敏感信息。 Qry 只在参数列表过大时创建，并且只保存查询或更新的参数。
+    
     
 # 关于shiro的几个优化
  ### shiro 和 druid 矛盾。 
