@@ -47,7 +47,7 @@ public abstract class GenFormDepositInfo extends DepositInfo {
         return new GenFormDepositInfo(merchantId, html.toString(), amount, reference) {
             @Override
             public CompletableFuture<Result<DepositInfo>> submit() {
-                return Request.newBuilder().proxy(proxy).method(method).url(apiPath).parameter(params).build()
+                return Request.newBuilder().method(method).url(apiPath).parameter(params).config().setProxy(proxy).done().build()
                         .executeAsString(allow302AsyncHttpClient)
                         .thenApply(s -> Result.success(new DepositInfo(Type.FORM_DOC, merchantId, s, amount, reference)));
             }
