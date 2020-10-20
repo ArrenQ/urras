@@ -9,12 +9,15 @@ import org.springframework.beans.BeanUtils;
 import javax.annotation.Nullable;
 import java.beans.PropertyDescriptor;
 import java.beans.PropertyEditor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Bean工具类
@@ -42,6 +45,11 @@ public class BeanKit {
         return false;
     }
 
+    public static List<Field> getFields(Class<?> clazz, boolean publicOnly, Predicate<Field> test) {
+        Field[] fields = publicOnly ? clazz.getFields() : clazz.getDeclaredFields();
+        return Arrays.stream(fields).filter(test).collect(Collectors.toList());
+    }
+
     public static PropertyEditor findEditor(Class<?> type) {
         return BeanUtils.findEditorByConvention(type);
     }
@@ -54,6 +62,17 @@ public class BeanKit {
      */
     public static PropertyDescriptor[] getPropertyDescriptors(Class<?> clazz)  {
         return BeanUtils.getPropertyDescriptors(clazz);
+    }
+
+    public static PropertyDescriptor[] getPropertyDescriptors(Class<?> clazz, Predicate<PropertyDescriptor> test) {
+        PropertyDescriptor[]  pds = BeanUtils.getPropertyDescriptors(clazz);
+        List<PropertyDescriptor> list = new ArrayList<>();
+        for(PropertyDescriptor pd : pds) {
+            if(test.test(pd)) {
+                list.add(pd);
+            }
+        }
+        return list.toArray(new PropertyDescriptor[0]);
     }
 
     /**

@@ -262,7 +262,7 @@ public class Request implements Supplier<HttpRequestBase> {
                     queryString(uri[1]);
                 } catch (Exception ignore) { }
             }
-            this.url = url;
+            this.url = url.trim();
             return this;
         }
 
