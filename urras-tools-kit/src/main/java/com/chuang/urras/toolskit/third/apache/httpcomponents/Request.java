@@ -197,6 +197,13 @@ public class Request implements Supplier<HttpRequestBase> {
             charset = "UTF-8";
         }
 
+        public Map<String, String> headers() {
+            return this.headers;
+        }
+        public Map<String, String> params() {
+            return this.params;
+        }
+
         public Builder method(String method) {
             this.method = HttpMethod.valueOf(method.toUpperCase());
             return this;

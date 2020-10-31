@@ -6,7 +6,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Assert;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
-import com.baomidou.mybatisplus.core.toolkit.ReflectionKit;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.core.toolkit.support.SFunction;
 import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
@@ -18,6 +17,7 @@ import com.baomidou.mybatisplus.extension.toolkit.SqlHelper;
 import com.chuang.urras.crud.filters.RowQuery;
 import com.chuang.urras.support.Result;
 import com.chuang.urras.support.exception.SystemErrorException;
+import com.chuang.urras.toolskit.basic.CollectionKit;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
@@ -33,6 +33,21 @@ public interface IService<T> {
         }
     }
 
+    default <R> Set<R> findNoHave(SFunction<T, R> mapper, R... set) {
+        return findNoHave(mapper, Arrays.stream(set).collect(Collectors.toSet()));
+    }
+
+    default <R> Set<R> findNoHave(SFunction<T,R> mapper, Set<R> set) {
+        Set<R> have = lambdaQuery()
+                .select(mapper)
+                .in(mapper, set)
+                .list()
+                .stream()
+                .map(mapper)
+                .collect(Collectors.toSet());
+
+        return CollectionKit.subtract(set, have, HashSet::new);
+    }
 
     Class<T> currentModelClass();
 

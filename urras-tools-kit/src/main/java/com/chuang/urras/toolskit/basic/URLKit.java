@@ -7,9 +7,7 @@ import com.chuang.urras.support.exception.SystemErrorException;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -19,7 +17,7 @@ import java.util.regex.Pattern;
  */
 public class URLKit {
     private final static Set<String> PublicSuffixSet = new HashSet<>(
-            Arrays.asList("com|org|net|gov|edu|co|tv|mobi|info|asia|xxx|onion|cn|com.cn|edu.cn|gov.cn|net.cn|org.cn|jp|kr|tw|com.hk|hk|com.hk|org.hk|se|com.se|org.se"
+            Arrays.asList("com|org|net|gov|edu|co|cc|tv|mobi|info|asia|xxx|onion|cn|com.cn|edu.cn|gov.cn|net.cn|org.cn|jp|kr|tw|com.hk|hk|com.hk|org.hk|se|com.se|org.se"
                     .split("\\|")));
     private static Pattern IP_PATTERN = Pattern.compile("(\\d{1,3}\\.){3}(\\d{1,3})");
 
@@ -243,5 +241,43 @@ public class URLKit {
     public static boolean isSameDomainName(String url1, String url2)
             throws MalformedURLException {
         return isSameDomainName(new URL(url1), new URL(url2));
+    }
+
+
+    public static String getQueryURI (URI uri, Map<String, String> params) {
+        String path = uri.getPath();
+        String query = uri.getQuery();
+        if(StringKit.isEmpty(path)) {
+            path = "/";
+        }
+        if(StringKit.isBlank(query)) {
+            query = getQueryString(params);
+        } else {
+            query += "&" + getQueryString(params);
+        }
+
+        return path + "?" + query;
+    }
+
+    /**
+     * 将map转成字符串
+     */
+    public static String getQueryString(Map<String, String> params) {
+
+        StringBuilder result = new StringBuilder();
+        Iterator<Map.Entry<String, String>> iter = params.entrySet().iterator();
+        Map.Entry<String, String> entry = iter.next();
+
+        result.append(entry.getKey()).append("=").append(entry.getValue());// 添加第一个参数
+        if (params.size() == 1) {
+            return result.toString();
+        }
+
+        while (iter.hasNext()) {
+            entry = iter.next();
+            result.append("&").append(entry.getKey()).append("=").append(entry.getValue());// 添加第一个参数
+        }
+        return result.toString();
+
     }
 }

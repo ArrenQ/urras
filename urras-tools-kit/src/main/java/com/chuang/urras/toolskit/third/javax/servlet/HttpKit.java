@@ -16,9 +16,6 @@
 package com.chuang.urras.toolskit.third.javax.servlet;
 
 import com.chuang.urras.toolskit.basic.RegexKit;
-import com.chuang.urras.toolskit.basic.StringKit;
-import org.apache.commons.lang3.StringUtils;
-import org.springframework.http.HttpHeaders;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 

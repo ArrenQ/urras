@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 public class FutureKit {
     public static <T> CompletableFuture<T> error(Throwable throwable) {
-        CompletableFuture f = new CompletableFuture();
+        CompletableFuture<T> f = new CompletableFuture<>();
         f.completeExceptionally(throwable);
         return f;
     }
