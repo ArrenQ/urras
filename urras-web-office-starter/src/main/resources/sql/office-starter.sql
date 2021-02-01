@@ -1,21 +1,21 @@
-CREATE TABLE `t_login_log` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
-  `username` varchar(32) NOT NULL COMMENT '用户名',
-  `real_name` varchar(32) NOT NULL COMMENT '真实名',
-  `client_host` varchar(32) NOT NULL COMMENT '客户端host',
-  `login_time` datetime NOT NULL COMMENT '登陆时间',
-  `success` bit(1) NOT NULL COMMENT '是否登陆成功',
-  `client_mac` varchar(32) NOT NULL DEFAULT '' COMMENT '客户端mac地址',
-  `device` varchar(50) NOT NULL COMMENT '设备',
-  `referer` varchar(50) NOT NULL COMMENT '来源',
-  `user_agent` varchar(255) NOT NULL COMMENT '用户代理',
-  `creator` varchar(32) NOT NULL COMMENT '创建人',
-  `created_time` datetime NOT NULL COMMENT '创建时间',
-  `updater` varchar(32) NOT NULL COMMENT '更新人',
-  `updated_time` datetime NOT NULL COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  KEY `i_username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='管理员登陆日子 ';
+-- CREATE TABLE `t_login_log` (
+--   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+--   `username` varchar(32) NOT NULL COMMENT '用户名',
+--   `real_name` varchar(32) NOT NULL COMMENT '真实名',
+--   `client_host` varchar(32) NOT NULL COMMENT '客户端host',
+--   `login_time` datetime NOT NULL COMMENT '登陆时间',
+--   `success` bit(1) NOT NULL COMMENT '是否登陆成功',
+--   `client_mac` varchar(32) NOT NULL DEFAULT '' COMMENT '客户端mac地址',
+--   `device` varchar(50) NOT NULL COMMENT '设备',
+--   `referer` varchar(50) NOT NULL COMMENT '来源',
+--   `user_agent` varchar(255) NOT NULL COMMENT '用户代理',
+--   `creator` varchar(32) NOT NULL COMMENT '创建人',
+--   `created_time` datetime NOT NULL COMMENT '创建时间',
+--   `updater` varchar(32) NOT NULL COMMENT '更新人',
+--   `updated_time` datetime NOT NULL COMMENT '更新时间',
+--   PRIMARY KEY (`id`),
+--   KEY `i_username` (`username`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='管理员登陆日子 ';
 
 CREATE TABLE `t_operation_log` (
   `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
@@ -173,7 +173,7 @@ INSERT INTO `t_resource` (id, `name`, type, url, i18n, parent_id, path, permissi
 INSERT INTO `t_resource` (id, `name`, type, url, i18n, parent_id, path, permission, available, icon, description, creator, created_time, updater, updated_time) VALUES ('210448', '个人令牌赋权', 'button', '#', 'menu.principal_reauth', '210446', '0/2/21/210446', 'user-principal-resource-personal:re-auth', 1, 'icon-key', '个人令牌赋权', 'sys', NOW(), 'sys', NOW());
 INSERT INTO `t_resource` (id, `name`, type, url, i18n, parent_id, path, permission, available, icon, description, creator, created_time, updater, updated_time) VALUES ('210449', '管理员新增', 'button', '#', 'page.user.force_change_user_pwd', '2104', '0/2/21/2104/', 'auth:force-change-pwd', 1, 'icon-window', ' ', 'sys', NOW(), 'sys', NOW());
 
-INSERT INTO `t_role` VALUES ('1', 'admin', '超级管理员', '1', 'sys', NOW(), 'sys', NOW());
+INSERT INTO `t_role` VALUES ('1', 'admin', '超级管理员', 1, 'sys', NOW(), 'sys', NOW());
 
 INSERT INTO `t_user` VALUES ('1', 'admin', '', '超级管理员', 'de59aef03ebe', '1', '0', '管理员', '1', 'ath@gmail.com', '123123123', '313213123', '0', 'fasfasfasfsa', ' ', '0', '2019-03-19 14:18:54', '超级管理员', '127.0.0.1', 'https://cdn.pixabay.com/photo/2018/07/12/22/25/fantasy-3534494__340.jpg', '1', '1');
 

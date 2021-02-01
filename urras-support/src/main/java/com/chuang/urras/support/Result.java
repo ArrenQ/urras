@@ -5,7 +5,7 @@ import com.chuang.urras.support.enums.Whether;
 import javax.annotation.Nullable;
 import java.util.function.Function;
 
-public final class Result<T> {
+public  class Result<T> {
 
     public static final int SUCCESS_CODE = 1;
     public static final int FAIL_CODE = 2;

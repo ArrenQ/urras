@@ -10,6 +10,9 @@ import java.util.Optional;
  * @date 2016/7/7
  */
 public class SystemWarnException extends CodeException {
+    public SystemWarnException(String msg) {
+        super(-1, msg);
+    }
     public SystemWarnException(int code, String msg) {
         super(code, msg);
     }

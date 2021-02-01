@@ -10,7 +10,6 @@ import org.apache.shiro.ShiroException;
 import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;

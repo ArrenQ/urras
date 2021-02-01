@@ -1,6 +1,5 @@
 package com.chuang.urras.web.shiro.configuration;
 
-import com.chuang.urras.toolskit.third.apache.shiro.ShiroRedisCache;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.session.UnknownSessionException;
 import org.apache.shiro.session.mgt.SessionKey;
