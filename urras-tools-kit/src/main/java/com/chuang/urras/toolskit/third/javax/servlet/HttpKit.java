@@ -88,7 +88,11 @@ public class HttpKit {
     }
 
     public static String getIpAddress(HttpServletRequest request) {
-        String ip = request.getHeader("x-forwarded-for");
+        String ip = request.getHeader("x-real-ip");
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("x-forwarded-for");
+        }
+
         if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             ip = request.getHeader("Proxy-Client-IP");
         } else {
