@@ -118,6 +118,8 @@ public class User implements Serializable {
      */
     private Language useLanguage;
 
+    private String productCode;
+
     /**
      * 最后登陆时IP
      */
@@ -146,6 +148,8 @@ public class User implements Serializable {
      */
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedTime;
+
+
 
 
 }

@@ -16,6 +16,7 @@ import com.chuang.urras.toolskit.basic.IOKit;
 import com.chuang.urras.toolskit.third.javax.servlet.HttpKit;
 import com.chuang.urras.web.office.model.OperationLog;
 import com.chuang.urras.web.office.service.single.IOperationLogService;
+import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiOperation;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -46,11 +47,11 @@ public class CrudController<T> extends BaseController {
 
     private final String permissionPrefix;
 
-    @Autowired
-    protected IService<T> service;
+    @Autowired protected IService<T> service;
 
-    @Resource
-    protected IOperationLogService operationLogService;
+    @Resource protected IOperationLogService operationLogService;
+
+//    @Resource private IProductCrudManager productCrudManager;
 
 //    @Value("urras.product.root")
 //    private String rootProductCode;
@@ -60,11 +61,11 @@ public class CrudController<T> extends BaseController {
 
     }
 
-//    /**
-//     * 对rowQuery进行预处理
-//     */
+    /**
+     * 对rowQuery进行预处理
+     */
 //    protected void preHandRowQuery(RowQuery rowQuery) {
-//        UserEntity user = getLoginUser();
+//        User user = getLoginUser();
 ////        if (ISite.class.isAssignableFrom(service.currentModelClass())) {
 //        if (BeanKit.getPropertyDescriptor(service.currentModelClass(), "productCode").isPresent()) {
 //            String[] list = productCrudManager.findChildren(user.getProductCode());
@@ -89,7 +90,7 @@ public class CrudController<T> extends BaseController {
     @PostMapping("/query")
     @ResponseBody
     @ApiOperation("根据RowQuery对象进行查询")
-//    @ApiImplicitParam(name = "rowQuery", value = "查询记录", required = true, dataTypeClass = RowQuery.class)
+    @ApiImplicitParam(name = "rowQuery", value = "查询记录", required = true, dataTypeClass = RowQuery.class)
     public IPage<T> query(@RequestBody RowQuery rowQuery) {
         this.checkPermission(":view");
 //        preHandRowQuery(rowQuery);
