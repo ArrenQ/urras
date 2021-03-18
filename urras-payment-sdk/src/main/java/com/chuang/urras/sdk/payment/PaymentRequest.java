@@ -3,6 +3,7 @@ package com.chuang.urras.sdk.payment;
 import com.chuang.urras.support.enums.PaymentType;
 import lombok.Data;
 
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 
 /**
@@ -15,4 +16,5 @@ public class PaymentRequest {
     private Long amount;
     private String username;
     private String clientIp;
+    @Nullable private Object ext;
 }
