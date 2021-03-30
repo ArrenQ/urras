@@ -1,6 +1,7 @@
 package com.chuang.urras.sdk.payment;
 
 import com.chuang.urras.sdk.payment.deposit.*;
+import com.chuang.urras.sdk.payment.query.PlatformInfo;
 import com.chuang.urras.sdk.payment.query.QueryInfo;
 import com.chuang.urras.sdk.payment.query.QueryRequest;
 import com.chuang.urras.sdk.payment.withdraw.WithdrawCallbackInfo;
@@ -23,6 +24,7 @@ import java.math.RoundingMode;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 /**
  * 支付平台接口定义
@@ -98,7 +100,7 @@ public interface IPaymentPlatform {
     Result<DepositCallbackInfo> depositCallback(Map<String, String> callbackParams, String body, boolean front, PaymentPlatformConfig config);
 
     default CompletableFuture<Result<WithdrawInfo>> withdraw(WithdrawRequest request, PaymentPlatformConfig config) {
-        throw new SystemWarnException(Result.FAIL_CODE, "withdraw not support");
+        return FutureKit.error(new SystemWarnException(Result.FAIL_CODE, "withdraw not support"));
     }
 
     default Result<WithdrawCallbackInfo> withdrawCallback(Map<String, String> callbackParams, String body, PaymentPlatformConfig config) {
@@ -116,5 +118,9 @@ public interface IPaymentPlatform {
 
     default boolean isSupport(PaymentType type, @Nullable Bank bank) {
         return paymentTypeCodeMapping().containsKey(type) && (null != bank && bankCodeMapping().containsKey(bank));
+    }
+
+    default CompletableFuture<Result<PlatformInfo>> queryPlatformInfo(PaymentPlatformConfig config) {
+        return FutureKit.error( new SystemWarnException(Result.FAIL_CODE, "query platform info not support"));
     }
 }

@@ -1,6 +1,7 @@
 package com.chuang.urras.sdk.payment;
 
 import com.chuang.urras.sdk.payment.deposit.*;
+import com.chuang.urras.sdk.payment.query.PlatformInfo;
 import com.chuang.urras.sdk.payment.query.QueryInfo;
 import com.chuang.urras.sdk.payment.query.QueryRequest;
 import com.chuang.urras.sdk.payment.withdraw.WithdrawCallbackInfo;
@@ -210,5 +211,13 @@ public class PaymentSDK {
         return platform.query(info, config);
     }
 
+    public CompletableFuture<Result<PlatformInfo>> queryPlatformInfo(PaymentPlatformConfig config) {
+        IPaymentPlatform platform = platforms.get(config.getPlatform());
+        if(null == platform) {
+            logger.warn("can not find {}, all platform codes are {}", config.getPlatform(), platforms);
+            throw new SystemWarnException(Result.FAIL_CODE, "sdk 不支持 " + config.getPlatform() + " 平台");
+        }
 
+        return platform.queryPlatformInfo(config);
+    }
 }
